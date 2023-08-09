@@ -53,19 +53,21 @@ nta = 600
 zpop = 1.0e-6
 
 # number of total states in a single trajectory
-dimH = 9
+dimH = 2
 
 # (absolute) slope of diabatic1 potential along x1 direction
-w1 = 0.25
-
+#w1 = 0.25
+A = 0.0006
 # slope of diabatic2-dimH potential along x1 direction
-w2 = 0.025
+#w2 = 0.025
+B = 0.10
 
+C = 0.90
 # linear coupling constant
-c = 0.025
+#c = 0.025
 
 # spacing distance
-delta = 0.01
+#delta = 0.01
 
 #nuclear simulation time step
 deltatn = 0.05
@@ -82,10 +84,10 @@ trajnum = 1000
 #Maximum number of nuclear time steps within a simulation
 tstepmax = 6000
 
-#Decoherence correction parameter on x1 direction
+#Decoherence correction parameter on x direction
 dcp1 = 6.0
 #Decoherence correction parameter on x2 direction
-dcp2 = 6.0
+#dcp2 = 6.0
 
 #Particle mass (Nuclear mass)
 pmass = 1845
@@ -117,10 +119,11 @@ while k <= trajnum:
 	#-----------Initial Conditions for trajectory-k -----------------
 	np.random.seed(k)
 	x1 = np.random.normal(0.0,0.204)-1.0	#Initial paritcle position on x1-direction
-	x2 = np.random.normal(0.0,0.204)	#Initial particle position on x2-direction
+	#x2 = np.random.normal(0.0,0.204)	#Initial particle position on x2-direction
 	odotx1 = np.random.normal(10.0,2.451)/pmass	#Initial particle velocity on x1-direction
-	odotx2 = np.random.normal(10.0,2.451)/pmass	#Initial particle velocity on x2-direction
-	KE = 0.5*pmass*(odotx1**2.0+odotx2**2.0)	#Initial kinetic energy
+	#odotx2 = np.random.normal(10.0,2.451)/pmass	#Initial particle velocity on x2-direction
+	#KE = 0.5*pmass*(odotx1**2.0+odotx2**2.0)	#Initial kinetic energy
+	KE = 0.5*pmass*(odotx1**2.0)
 	t = 0.0		#Initial simulation time
 
 	#-----------Initilize the Time dependent wave function----------
@@ -135,7 +138,7 @@ while k <= trajnum:
 	ct = cr + 1j*ci 
 
 	#Calculating the Hamiltonian matrix at initial positions
-	H = buildH(dimH, x1, x2, w1, w2, c, delta)
+	H = buildH(dimH, x1, A, B, C)
 
 	#------------Creating trajectory-k specific output files--------
 
@@ -218,12 +221,13 @@ while k <= trajnum:
 	dpopout.write(heading)
 
 	#Writing out t = 0 outputs
-	null = writemain(t,dimH,x1,x2,ct,odotx1,odotx2,H,posout,eneout,popout,dpopout,outp,pmass)
+	null = writemain(t,dimH,x1,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass)
 
 	#----------Begin the simulation---------------------------------
 	#Compute the Ehrenfest forces
-	mfdF1, mfdF2 = calEff(dimH,ct, x1, x2, w1, w2, c, delta)
-	
+	#mfdF1, mfdF2 = calEff(dimH,ct, x1, x2, w1, w2, c, delta)
+	mfdF1 = calEff(dimH, ct, x1, A, B, C)
+
 	amp = np.zeros((dimH),dtype=np.complex)
 	poparray = np.zeros((dimH))
 	oldpop = np.zeros((dimH))
@@ -256,14 +260,16 @@ while k <= trajnum:
 	pass
 
 	oldforce1 = np.zeros((dimH))
-	oldforce2 = np.zeros((dimH))
-	dH1,dH2 = dHcalc(dimH,x1,x2,w1,w2,c,delta)   #diratives of diabatic Hamiltonian
+	#oldforce2 = np.zeros((dimH))
+	#dH1,dH2 = dHcalc(dimH,x1,x2,w1,w2,c,delta)   #diratives of diabatic Hamiltonian
+	dH1 = dHcalc(dimH, x1, A, B, C)
+
 	i = 0
 	while i < dimH:
 		force1 = -np.dot(tsVR[i,:],np.dot(dH1,sVR[:,i]))
-		force2 = -np.dot(tsVR[i,:],np.dot(dH2,sVR[:,i]))
+		#force2 = -np.dot(tsVR[i,:],np.dot(dH2,sVR[:,i]))
 		oldforce1[i] = force1
-		oldforce2[i] = force2
+		#oldforce2[i] = force2
 		i = i + 1
 	pass
 
@@ -284,13 +290,13 @@ while k <= trajnum:
 
 		#Step positions forward in time
 		acel1 = mfdF1/pmass
-		acel2 = mfdF2/pmass
+		#acel2 = mfdF2/pmass
 		
 		x1 = movex(x1, odotx1, acel1, deltatn)
-		x2 = movex(x2, odotx2, acel2, deltatn)
+		#x2 = movex(x2, odotx2, acel2, deltatn)
 
 		#Calculte H at the new position
-		H = buildH(dimH, x1, x2, w1, w2, c, delta)
+		H = buildH(dimH, x1, A, B, C)
 
 		#Propagate WF through the other half time step using H(t+dt)
 		i = 0
@@ -306,14 +312,15 @@ while k <= trajnum:
 		norm2ct = (cnorm.real)**(0.50)
 
 		#Storing forces from the last step
-		mfdFprev1, mfdFprev2 = mfdF1, mfdF2
-
+		#mfdFprev1, mfdFprev2 = mfdF1, mfdF2
+		mfdFprev1 = mfdF1
 		#Calculate Ehrenfest forces
-		mfdF1, mfdF2 = calEff(dimH, ct, x1, x2, w1, w2, c, delta)
+		#mfdF1, mfdF2 = calEff(dimH, ct, x1, x2, w1, w2, c, delta)
+		mfdF1 = calEff(dimH, ct, x1, A, B, C)
 
 		#Step velocities forward in time
 		odotx1 = vcalc(odotx1, mfdF1, mfdFprev1, deltatn, pmass)
-		odotx2 = vcalc(odotx2, mfdF2, mfdFprev2, deltatn, pmass)
+		#odotx2 = vcalc(odotx2, mfdF2, mfdFprev2, deltatn, pmass)
 		
 
 		#-------------- TAB Starts from Here ---------------------------------------
@@ -321,7 +328,8 @@ while k <= trajnum:
 		
 		ampdir = np.zeros((dimH),dtype=np.complex)	#Stores amplitude directions for each state
 		amp = np.zeros((dimH),dtype=np.complex)		#Stores amplitudes for each state
-		KE = 0.5*pmass*(odotx1**2.0+odotx2**2.0)
+		#KE = 0.5*pmass*(odotx1**2.0+odotx2**2.0)
+		KE = 0.5*pmass*(odotx1**2.0)
 
 		w, VR = np.linalg.eigh(H)
 		sw, sVR = eigsort(dimH,w,VR)
@@ -353,40 +361,42 @@ while k <= trajnum:
 		rEMF = EMF.real
 		roldEMF = rEMF
 		
-		dH1,dH2 = dHcalc(dimH,x1,x2,w1,w2,c,delta)   #diratives of diabatic Hamiltonian
+		#dH1,dH2 = dHcalc(dimH,x1,x2,w1,w2,c,delta)   #diratives of diabatic Hamiltonian
+		dH1 = dHcalc(dimH, x1, A, B, C)
+
 		newforce1=np.zeros((dimH))        #Adiabatic State Force along x1 direction
-		newforce2=np.zeros((dimH))        #Adiabatic State Force along x2 direction
+		#newforce2=np.zeros((dimH))        #Adiabatic State Force along x2 direction
 		i = 0 
 		while i < dimH:
 			force1 = -np.dot(tsVR[i,:],np.dot(dH1,sVR[:,i]))
-			force2 = -np.dot(tsVR[i,:],np.dot(dH2,sVR[:,i]))
+			#force2 = -np.dot(tsVR[i,:],np.dot(dH2,sVR[:,i]))
 			newforce1[i] = force1
-			newforce2[i] = force2
+			#newforce2[i] = force2
 			i = i + 1
 		pass
 		
 		aforce1 = np.zeros((dimH))
-		aforce2 = np.zeros((dimH))
+		#aforce2 = np.zeros((dimH))
 		
 		odotrho = np.zeros((dimH))
 		i = 0
 		while i < dimH:
 			aforce1[i] = (oldforce1[i] + newforce1[i])/2.0
-			aforce2[i] = (oldforce2[i] + newforce2[i])/2.0
+			#aforce2[i] = (oldforce2[i] + newforce2[i])/2.0
 			odotrho[i] = (poparray[i] - oldpop[i])/deltatn
 			i = i + 1
 		pass
 		
 		#----------- New Collapse Routine Goes Here ---------------------
 		npop = np.zeros((dimH))
-		npop = gcollapse(dimH,deltatn,aforce1,aforce2,poparray,dcp1,dcp2,nzthresh,errortol,npthresh,pehrptol,odotrho,tolodotrho,nta,dtw,zpop,dgscale)
+		npop = gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehrptol,odotrho,tolodotrho,nta,dtw,zpop,dgscale)
 		
 		oldforce1 = np.zeros((dimH))
-		oldforce2 = np.zeros((dimH))
+		#oldforce2 = np.zeros((dimH))
 		i = 0 
 		while i < dimH:
 			oldforce1[i] = newforce1[i]
-			oldforce2[i] = newforce2[i]
+			#oldforce2[i] = newforce2[i]
 			i = i + 1
 		pass
 
@@ -428,7 +438,8 @@ while k <= trajnum:
 #			sys.exit()
 #		pass
 		
-		mfdF1, mfdF2 = calEff(dimH, ct, x1, x2, w1, w2, c, delta)
+		#mfdF1, mfdF2 = calEff(dimH, ct, x1, x2, w1, w2, c, delta)
+		mfdF1= calEff(dimH, ct, x1, A, B, C)
 		EMF = np.dot(ccont,np.dot(H,ct))/cnorm
 		rEMF = EMF.real
 		
@@ -442,7 +453,8 @@ while k <= trajnum:
 			sys.exit()
 		pass
 		
-		odotx2 = math.copysign(abs((2.0*nKE/pmass)-odotx1**2.0)**0.50,odotx2)	
+		odotx1 = (2.0*nKE/pmass)**0.50
+		#odotx2 = math.copysign(abs((2.0*nKE/pmass)-odotx1**2.0)**0.50,odotx2)	
 		
 		i = 0
 		while i < dimH:
@@ -451,7 +463,7 @@ while k <= trajnum:
 		pass
 
 		if (n%twrite == 0):
-			null = writemain(t,dimH,x1,x2,ct,odotx1,odotx2,H,posout,eneout,popout,dpopout,outp,pmass)
+			null = writemain(t,dimH,x,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass)
 		pass
 		
 		n = n+1 #forward one time step

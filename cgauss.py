@@ -1,4 +1,4 @@
-def gcollapse(dimH,deltatn,aforce1,aforce2,poparray,dcp1,dcp2,nzthresh,errortol,npthresh,pehrptol,odotrho,tolodotrho,nta,dtw,zpop,dgscale): # Determines which coherent sub-block 
+def gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehrptol,odotrho,tolodotrho,nta,dtw,zpop,dgscale): # Determines which coherent sub-block 
 	"""of the electronic density matrix the WF collapses into"""
 
 	# Standard library imports =====================================
@@ -26,7 +26,7 @@ def gcollapse(dimH,deltatn,aforce1,aforce2,poparray,dcp1,dcp2,nzthresh,errortol,
 	while i < dimH:
 		j = i + 1
 		while j < dimH:
-			invtau[i][j] = ((aforce1[i]-aforce1[j])**(2.0)/(8.0*dcp1)+(aforce2[i]-aforce2[j])**(2.0)/(8.0*dcp2))**(0.50)
+			invtau[i][j] = ((aforce1[i]-aforce1[j])**(2.0)/(8.0*dcp1))**(0.50)
 			invtau[j][i] = invtau[i][j]
 			j = j + 1
 		i = i + 1

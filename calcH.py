@@ -1,4 +1,4 @@
-def buildH(dimH, x1, x2, w1, w2, c, delta):
+def buildH(dimH, x1, A, B, C):
 #Build the Hamiltonian for at position (x1,x2)
 	
 	import numpy as np
@@ -6,6 +6,7 @@ def buildH(dimH, x1, x2, w1, w2, c, delta):
 	#initialize Hamiltonian matrix
 	H = np.zeros((dimH,dimH))
 
+    ########################################################
 	H[0][0] = -1.0*w1*x1   #diabatic potential
 	
 	i = 1
@@ -23,5 +24,7 @@ def buildH(dimH, x1, x2, w1, w2, c, delta):
 		H[i][i] = H[i][i] - 0.08
 		i = i + 1
 	pass
+
+	#######################################################
 
 	return H

@@ -1,4 +1,4 @@
-def writemain (t,dimH,x1,x2,ct,odotx1,odotx2,H,posout,eneout,popout,dpopout,outp,pmass): #writing to output files
+def writemain (t,dimH,x1,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass): #writing to output files
 	import numpy as np
 	import sys	
 	from hwrsort import eigsort
@@ -27,8 +27,9 @@ def writemain (t,dimH,x1,x2,ct,odotx1,odotx2,H,posout,eneout,popout,dpopout,outp
 	EMFr = EMF.real 	#Real part of the MF energy
 
 	#Kinetic energy
-	KE = 0.5*pmass*(odotx1**2.0+odotx2**2.0)
-
+	#KE = 0.5*pmass*(odotx1**2.0+odotx2**2.0)
+	KE = 0.5*pmass*(odotx1**2.0)
+	
 	Etot = EMFr + KE 		#Total Energy
 
 	inorm = norm.imag
