@@ -1,5 +1,5 @@
 # Calculate Ehrenfest force
-def calEff(dimH, ct, x1, A, B, C):
+def calEff(dimH, ct, x1, w1, w2, delta, c):
 	
 	import numpy as np
 
@@ -7,7 +7,7 @@ def calEff(dimH, ct, x1, A, B, C):
 	
 	ctbra = np.transpose(np.conjugate(ct))
 	
-	dH1= dHcalc(dimH, x1, A, B, C)
+	dH1= dHcalc(dimH, x1, w1, w2, c)
 
 	cnorm = np.dot(ctbra, ct)
 

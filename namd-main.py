@@ -6,6 +6,8 @@ import numpy as np 		#Python matrix operation package
 import sys			#use sys.exit() to stop program
 import random 			#Random number generator
 import math
+import os  # For creating directories and handling paths
+
 
 #-----------------Import custom functions----------------------------------------
 from calcH import buildH		#Construct the Hamiltonian matrix for a give x1, x2
@@ -22,6 +24,9 @@ from cgauss import gcollapse		#Collapses after coherence is lost into a pure sta
 outp = (open('run.log', 'w'))
 outs = str('All packages and functions loaded successfully \n')
 outp.write(outs)
+#Create the 'data' directory if it doesn't exist:
+output_dir = 'data'
+os.makedirs(output_dir, exist_ok=True)
 
 #------------------User-adjustable parameters-----------------------------------
 # Threshold for considering numbers numerically zero
@@ -55,19 +60,24 @@ zpop = 1.0e-6
 # number of total states in a single trajectory
 dimH = 2
 
+#basis to run TAB in (collapse will be in this basis). 
+#To run TAB in the regular adiabatic basis leave this field blank. For the diabatic basis, set to 'diabatic'.
+
+basis='diabatic'
+
 # (absolute) slope of diabatic1 potential along x1 direction
-#w1 = 0.25
+w1 = 0.25
 A = 0.0006
 # slope of diabatic2-dimH potential along x1 direction
-#w2 = 0.025
+w2 = 0.025
 B = 0.10
 
 C = 0.90
 # linear coupling constant
-#c = 0.025
+c = 0.025
 
 # spacing distance
-#delta = 0.01
+delta = 0.01
 
 #nuclear simulation time step
 deltatn = 0.05
@@ -138,16 +148,13 @@ while k <= trajnum:
 	ct = cr + 1j*ci 
 
 	#Calculating the Hamiltonian matrix at initial positions
-	H = buildH(dimH, x1, A, B, C)
+	H = buildH(dimH, x1, w1, w2, delta, c)
 
 	#------------Creating trajectory-k specific output files--------
 
 	#Opening trajectory specific position output file
-	line1 = str('pos')
-	line2 = str(k)
-	line3 = str('.dat')
-	line = line1 + line2 + line3
-	posout = (open(line, 'w'))
+	posout = open(os.path.join(output_dir, f'pos{k}.dat'), 'w')
+
 
 	#Heading for position output file of each trajectory
 	line1 = str('t').rjust(8)
@@ -157,11 +164,7 @@ while k <= trajnum:
 	posout.write(heading)
 
 	#Opening trajactory specific energy and norm output file
-	line1 = str('ene')
-	line2 = str(k)
-	line3 = str('.dat')
-	line = line1 + line2 + line3
-	eneout = (open(line, 'w'))
+	eneout = open(os.path.join(output_dir, f'ene{k}.dat'), 'w')
 
 	#Heading for energy and norm output file
 	line1 = str('t').rjust(8)
@@ -173,11 +176,8 @@ while k <= trajnum:
 	eneout.write(heading)
 
 	#Opening trajectory specific state population output file
-	line1 = str('pop')
-	line2 = str(k)
-	line3 = str('.dat')
-	line = line1 + line2 + line3
-	popout = (open(line, 'w'))
+	popout = open(os.path.join(output_dir, f'pop{k}.dat'), 'w')
+
 
 	#Heading for population output file
 	i = 0
@@ -197,11 +197,8 @@ while k <= trajnum:
 	popout.write(heading)
 		
 	#Opening trajectory specific diabatic population output file
-	line1 = str('dpop')
-	line2 = str(k)
-	line3 = str('.dat')
-	line = line1 + line2 + line3
-	dpopout = (open(line, 'w'))
+	dpopout = open(os.path.join(output_dir, f'dpop{k}.dat'), 'w')
+
 	
 	#Heading for diabaticpopulation output file
 	i = 0
@@ -226,9 +223,9 @@ while k <= trajnum:
 	#----------Begin the simulation---------------------------------
 	#Compute the Ehrenfest forces
 	#mfdF1, mfdF2 = calEff(dimH,ct, x1, x2, w1, w2, c, delta)
-	mfdF1 = calEff(dimH, ct, x1, A, B, C)
+	mfdF1 = calEff(dimH, ct, x1, w1, w2, delta, c)
 
-	amp = np.zeros((dimH),dtype=np.complex)
+	amp = np.zeros((dimH),dtype=complex)
 	poparray = np.zeros((dimH))
 	oldpop = np.zeros((dimH))
 
@@ -241,7 +238,7 @@ while k <= trajnum:
 	sw, sVR = eigsort(dimH,w,VR)
 	tsVR = np.transpose(sVR)
 	
-	temp1 = np.zeros((1),dtype=np.complex)
+	temp1 = np.zeros((1),dtype=complex)
 	
 	i = 0
 	while i < dimH:
@@ -262,16 +259,24 @@ while k <= trajnum:
 	oldforce1 = np.zeros((dimH))
 	#oldforce2 = np.zeros((dimH))
 	#dH1,dH2 = dHcalc(dimH,x1,x2,w1,w2,c,delta)   #diratives of diabatic Hamiltonian
-	dH1 = dHcalc(dimH, x1, A, B, C)
+	dH1 = dHcalc(dimH, x1, w1, w2, c)
 
-	i = 0
-	while i < dimH:
-		force1 = -np.dot(tsVR[i,:],np.dot(dH1,sVR[:,i]))
-		#force2 = -np.dot(tsVR[i,:],np.dot(dH2,sVR[:,i]))
-		oldforce1[i] = force1
-		#oldforce2[i] = force2
-		i = i + 1
-	pass
+	if basis=='diabatic':
+		i = 0
+		while i < dimH:
+			force1 = -1.0*dH1
+			oldforce1[i] = force1
+			i = i + 1
+		pass
+	else:
+		i = 0
+		while i < dimH:
+			force1 = -np.dot(tsVR[i,:],np.dot(dH1,sVR[:,i]))
+			#force2 = -np.dot(tsVR[i,:],np.dot(dH2,sVR[:,i]))
+			oldforce1[i] = force1
+			#oldforce2[i] = force2
+			i = i + 1
+		pass
 
 	#Time steps count
 	n = 1
@@ -296,7 +301,7 @@ while k <= trajnum:
 		#x2 = movex(x2, odotx2, acel2, deltatn)
 
 		#Calculte H at the new position
-		H = buildH(dimH, x1, A, B, C)
+		H = buildH(dimH, x1, w1, w2, delta, c)
 
 		#Propagate WF through the other half time step using H(t+dt)
 		i = 0
@@ -316,7 +321,7 @@ while k <= trajnum:
 		mfdFprev1 = mfdF1
 		#Calculate Ehrenfest forces
 		#mfdF1, mfdF2 = calEff(dimH, ct, x1, x2, w1, w2, c, delta)
-		mfdF1 = calEff(dimH, ct, x1, A, B, C)
+		mfdF1 = calEff(dimH, ct, x1, w1, w2, delta, c)
 
 		#Step velocities forward in time
 		odotx1 = vcalc(odotx1, mfdF1, mfdFprev1, deltatn, pmass)
@@ -326,8 +331,8 @@ while k <= trajnum:
 		#-------------- TAB Starts from Here ---------------------------------------
 		poparray = np.zeros((dimH))	#array holding state populations
 		
-		ampdir = np.zeros((dimH),dtype=np.complex)	#Stores amplitude directions for each state
-		amp = np.zeros((dimH),dtype=np.complex)		#Stores amplitudes for each state
+		ampdir = np.zeros((dimH),dtype=complex)	#Stores amplitude directions for each state
+		amp = np.zeros((dimH),dtype=complex)		#Stores amplitudes for each state
 		#KE = 0.5*pmass*(odotx1**2.0+odotx2**2.0)
 		KE = 0.5*pmass*(odotx1**2.0)
 
@@ -362,7 +367,7 @@ while k <= trajnum:
 		roldEMF = rEMF
 		
 		#dH1,dH2 = dHcalc(dimH,x1,x2,w1,w2,c,delta)   #diratives of diabatic Hamiltonian
-		dH1 = dHcalc(dimH, x1, A, B, C)
+		dH1 = dHcalc(dimH, x1, w1, w2, c)
 
 		newforce1=np.zeros((dimH))        #Adiabatic State Force along x1 direction
 		#newforce2=np.zeros((dimH))        #Adiabatic State Force along x2 direction
@@ -439,7 +444,7 @@ while k <= trajnum:
 #		pass
 		
 		#mfdF1, mfdF2 = calEff(dimH, ct, x1, x2, w1, w2, c, delta)
-		mfdF1= calEff(dimH, ct, x1, A, B, C)
+		mfdF1= calEff(dimH, ct, x1, w1, w2, delta, c)
 		EMF = np.dot(ccont,np.dot(H,ct))/cnorm
 		rEMF = EMF.real
 		
@@ -463,7 +468,7 @@ while k <= trajnum:
 		pass
 
 		if (n%twrite == 0):
-			null = writemain(t,dimH,x,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass)
+			null = writemain(t,dimH,x1,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass)
 		pass
 		
 		n = n+1 #forward one time step

@@ -82,8 +82,8 @@ def writemain (t,dimH,x1,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass): #
 
 	line1 = format(t,'.4f').rjust(8)
 	line2 = format(x1,'.10f').rjust(20)
-	line3 = format(x2,'.10f').rjust(20)
-	lineout = line1 + line2 + line3 + '\n'
+	#line3 = format(x2,'.10f').rjust(20)
+	lineout = line1 + line2 + '\n'
 	posout.write(lineout)
 
 	line2 = format(EMFr,'.10f').rjust(20)
