@@ -264,7 +264,7 @@ while k <= trajnum:
 	if basis=='diabatic':
 		i = 0
 		while i < dimH:
-			force1 = -1.0*dH1
+			force1 = -1.0*dH1[i][i]
 			oldforce1[i] = force1
 			i = i + 1
 		pass
@@ -336,37 +336,50 @@ while k <= trajnum:
 		#KE = 0.5*pmass*(odotx1**2.0+odotx2**2.0)
 		KE = 0.5*pmass*(odotx1**2.0)
 
-		w, VR = np.linalg.eigh(H)
-		sw, sVR = eigsort(dimH,w,VR)
-		tsVR = np.transpose(sVR)
 
 		Estates = np.zeros((dimH))
 		Estates = sw
 
 		temp1 = np.zeros((1),dtype=complex)
-
-		i = 0
-		while i < dimH:
-			amp[i] = np.dot(tsVR[i,:],ct)/norm2ct
-			temp1[0] = amp[i]
-			temp2 = np.conjugate(temp1)
-			temp3 = np.transpose(temp2)
-			temp4 = np.dot(temp3,temp1)
-			poparray[i] = temp4.real
-			
-			if (poparray[i] == 0):
-				ampdir[i] = 1.0
-			else:
-				ampdir[i] = amp[i]/(poparray[i]**(0.5))
+		if basis=='diabatic':
+			i = 0
+			while i < dimH:
+				amp[i] = ct[i]
+				temp1[0] = amp[i]
+				temp2 = np.conjugate(temp1)
+				temp3 = np.transpose(temp2)
+				temp4 = np.dot(temp3,temp1)
+				poparray[i] = temp4.real
+				if (poparray[i] == 0):
+					ampdir[i] = 1.0
+				else:
+					ampdir[i] = amp[i]/(poparray[i]**(0.5))
+				pass
+				i = i + 1
 			pass
-			i = i + 1
-		pass
+		else:
+			i = 0
+			while i < dimH:
+				amp[i] = np.dot(tsVR[i,:],ct)/norm2ct
+				temp1[0] = amp[i]
+				temp2 = np.conjugate(temp1)
+				temp3 = np.transpose(temp2)
+				temp4 = np.dot(temp3,temp1)
+				poparray[i] = temp4.real
+				
+				if (poparray[i] == 0):
+					ampdir[i] = 1.0
+				else:
+					ampdir[i] = amp[i]/(poparray[i]**(0.5))
+				pass
+				i = i + 1
+			pass
 		
 		EMF = np.dot(ccont,np.dot(H,ct))/cnorm
 		rEMF = EMF.real
 		roldEMF = rEMF
 		
-		#dH1,dH2 = dHcalc(dimH,x1,x2,w1,w2,c,delta)   #diratives of diabatic Hamiltonian
+		#dH1,dH2 = dHcalc(dimH,x1,x2,w1,w2,c,d elta)   #diratives of diabatic Hamiltonian
 		dH1 = dHcalc(dimH, x1, w1, w2, c)
 
 		newforce1=np.zeros((dimH))        #Adiabatic State Force along x1 direction
