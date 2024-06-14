@@ -89,7 +89,7 @@ hnstepe = 50
 deltate = deltatn/(2.0*hnstepe)
 
 #Number of trajectories to be run in a calculation
-trajnum = 1000
+trajnum = 550
 
 #Maximum number of nuclear time steps within a simulation
 tstepmax = 6000
@@ -124,7 +124,7 @@ intpop = np.zeros((dimH))
 intpop[0] = 1.000
 
 #loops over trajectories-k
-k = 450
+k = 1
 while k <= trajnum:	
 	#-----------Initial Conditions for trajectory-k -----------------
 	np.random.seed(k)
@@ -344,7 +344,7 @@ while k <= trajnum:
 		if basis=='diabatic':
 			i = 0
 			while i < dimH:
-				amp[i] = ct[i]
+				amp[i] = ct[i]/norm2ct
 				temp1[0] = amp[i]
 				temp2 = np.conjugate(temp1)
 				temp3 = np.transpose(temp2)
@@ -467,12 +467,11 @@ while k <= trajnum:
 	
 		if (nKE < 0.0):
 			print ('frustrated hops are needed')
-			print ('aborting program')
-			sys.exit()
-		pass
-		
-		odotx1 = (2.0*nKE/pmass)**0.50
-		#odotx2 = math.copysign(abs((2.0*nKE/pmass)-odotx1**2.0)**0.50,odotx2)	
+			odotx1 = -1.0*odotx1 #reverses velocity in case of frustrated hops
+			#odotx2 = -1.0*odotx2
+		else:		
+			odotx1 = (2.0*nKE/pmass)**0.50
+			#odotx2 = math.copysign(abs((2.0*nKE/pmass)-odotx1**2.0)**0.50,odotx2)	
 		
 		i = 0
 		while i < dimH:

@@ -1,0 +1,13 @@
+run.log
+__pycache__/calcH.cpython-39.pyc
+__pycache__/cgauss.cpython-39.pyc
+__pycache__/diffH.cpython-39.pyc
+__pycache__/efF.cpython-39.pyc
+__pycache__/hwrsort.cpython-39.pyc
+__pycache__/mainout.cpython-39.pyc
+__pycache__/movepos.cpython-39.pyc
+__pycache__/rtelem.cpython-39.pyc
+__pycache__/sremove.cpython-39.pyc
+__pycache__/vstep.cpython-39.pyc
+__pycache__/WFprop.cpython-39.pyc
+run.log

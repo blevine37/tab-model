@@ -3,7 +3,7 @@ import glob
 import matplotlib.pyplot as plt
 
 # Define the pattern for the .dat files
-file_pattern = "dpop*.dat"
+file_pattern = "pop*.dat"
 
 # Get a list of all files matching the pattern
 file_list = glob.glob(file_pattern)
@@ -33,14 +33,14 @@ average_df['state_1_pop'] /= count_df['count']
 average_df['poptot'] /= count_df['count']
 
 # Write the average data to avg_pop.dat
-average_df.to_csv('avg_dpop.dat', sep='\t', index=False, header=['t', 'state_0_pop', 'state_1_pop', 'poptot'])
+average_df.to_csv('avg_apop.dat', sep='\t', index=False, header=['t', 'state_0_pop', 'state_1_pop', 'poptot'])
 
 # Plot state 1 pop with t
 plt.figure(figsize=(10, 6))
 plt.plot(average_df['t'], average_df['state_1_pop'], label='dState 1 Pop')
 plt.xlabel('Time (t)')
-plt.ylabel('dState 1 Population')
-plt.title('dState 1 Population vs Time')
+plt.ylabel('aState 1 Population')
+plt.title('aState 1 Population vs Time')
 plt.legend()
 plt.grid(True)
 plt.show()
