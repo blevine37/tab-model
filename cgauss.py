@@ -1,4 +1,4 @@
-def gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehrptol,odotrho,tolodotrho,nta,dtw,zpop,dgscale): # Determines which coherent sub-block 
+def gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehrptol,odotrho,tolodotrho,nta,dtw,zpop,dgscale,amp): # Determines which coherent sub-block 
 	"""of the electronic density matrix the WF collapses into"""
 
 	# Standard library imports =====================================
@@ -15,7 +15,7 @@ def gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehr
 
 	# Rules ========================================================
 	# i, j, k, l, m, and n are all reserved for integer incrementing
-
+	print('poparray:',poparray)
 
 	# General setup ================================================
 	npop = np.zeros((dimH)) 	# Stores output electronic populations
@@ -32,35 +32,6 @@ def gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehr
 		i = i + 1
 	pass
 
-	# computing the weight function
-
-#	w = np.zeros((dimH,nta+1))
-#	zpoptime = np.zeros((dimH))
-
-#	i = 0
-#	while i < dimH:
-#		if (odotrho[i] >= tolodotrho):
-#			zpoptime[i] = poparray[i]/odotrho[i]
-#			k = 0
-#			sum = 0.0
-#			while k < nta:
-#				if ((sum + odotrho[i]*dtw) <= poparray[i]):
-#					w[i][k] = odotrho[i]*dtw/poparray[i]
-#				else: 
-#					if (sum < poparray[i]):
-#						w[i][k] = (poparray[i] - sum)/poparray[i]
-#					else:
-#						w[i][k] = 0.0
-#					pass
-#				pass
-#				sum = sum + odotrho[i]*dtw
-#				k = k + 1
-#			pass
-#			if (sum < poparray[i]):
-#				w[i][-1] = (poparray[i] - sum)/poparray[i]
-#			pass
-#		i = i + 1
-#	pass				
 
 #	Not super efficient, could put sooner, but here is the rank reduction 
 #	to working with only populated electronic states -> add a tolerance to pass
@@ -76,7 +47,7 @@ def gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehr
 	pass
 
 	rank = len(vstates)
-
+	print('rank:',rank)
 #	print 'odotrho'
 #	print odotrho
 #	print 'w'
@@ -93,6 +64,7 @@ def gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehr
 	nblock = 0
 
 	vtarget = []
+	vtarget_matrix = np.zeros((rank, rank), dtype=complex)
 	i = 0
 	while i < rank:
 		j = i
@@ -101,57 +73,28 @@ def gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehr
 			if (i == j):
 				velem = dgscale*poparray[vstates[i]]
 				eseg[i][i] = 1.0
-#			elif (odotrho[vstates[i]] < tolodotrho and odotrho[vstates[j]] < tolodotrho):
-#		                velem = ((poparray[vstates[i]]*poparray[vstates[j]])**(0.5))*(1.0+((math.exp(-1.0*((deltatn+dtw*nta)**(2.0))*invtau[vstates[i]][vstates[j]]*invtau[vstates[i]][vstates[j]])-math.exp(-1.0*((dtw*nta)**(2.0))*invtau[vstates[i]][vstates[j]]*invtau[vstates[i]][vstates[j]]))/math.exp(-1.0*((dtw*nta)**(2.0))*invtau[vstates[i]][vstates[j]]*invtau[vstates[i]][vstates[j]])))
-#			elif (odotrho[vstates[i]] >= tolodotrho and odotrho[vstates[j]] < tolodotrho):
-#				k = 0
-#				nsum = 0.0
-#				dsum = 0.0
-#				while k <= nta:
-#					nsum = nsum + w[vstates[i]][k]*(math.exp(-1.0*((deltatn+dtw*k)**(2.0))*invtau[vstates[i]][vstates[j]]*invtau[vstates[i]][vstates[j]])-math.exp(-1.0*((dtw*k)**(2.0))*invtau[vstates[i]][vstates[j]]*invtau[vstates[i]][vstates[j]]))
-#					dsum = dsum + w[vstates[i]][k]*math.exp(-1.0*((dtw*k)**(2.0))*invtau[vstates[i]][vstates[j]]*invtau[vstates[i]][vstates[j]])
-#					k = k + 1
-#				velem = ((poparray[vstates[i]]*poparray[vstates[j]])**(0.5))*(1.0+nsum/dsum)
-#			elif (odotrho[vstates[j]] >= tolodotrho and odotrho[vstates[i]] < tolodotrho):
- #                               k = 0
-  #                              nsum = 0.0
-   #                             dsum = 0.0
-    #                            while k <= nta:
-     #                                   nsum = nsum + w[vstates[j]][k]*(math.exp(-1.0*((deltatn+dtw*k)**(2.0))*invtau[vstates[i]][vstates[j]]*invtau[vstates[i]][vstates[j]])-math.exp(-1.0*((dtw*k)**(2.0))*invtau[vstates[i]][vstates[j]]*invtau[vstates[i]][vstates[j]]))
-      #                                  dsum = dsum + w[vstates[j]][k]*math.exp(-1.0*((dtw*k)**(2.0))*invtau[vstates[i]][vstates[j]]*invtau[vstates[i]][vstates[j]])
-       #                                 k = k + 1
-        #                        velem = ((poparray[vstates[i]]*poparray[vstates[j]])**(0.5))*(1.0+nsum/dsum)
-	#		elif (odotrho[vstates[i]] >= tolodotrho and odotrho[vstates[j]] >= tolodotrho): # clean up notation and just use derivatives
-	#			if (zpoptime[vstates[i]] > zpoptime[vstates[j]]):
-	 #                               k = 0
-	  #                              nsum = 0.0
-	   #                             dsum = 0.0
-	    #                            while k <= nta:
-	     #                                   nsum = nsum + w[vstates[j]][k]*(math.exp(-1.0*((deltatn+dtw*k)**(2.0))*invtau[vstates[i]][vstates[j]]*invtau[vstates[i]][vstates[j]])-math.exp(-1.0*((dtw*k)**(2.0))*invtau[vstates[i]][vstates[j]]*invtau[vstates[i]][vstates[j]]))
-	      #                                  dsum = dsum + w[vstates[j]][k]*math.exp(-1.0*((dtw*k)**(2.0))*invtau[vstates[i]][vstates[j]]*invtau[vstates[i]][vstates[j]])
-	       #                                 k = k + 1
-	        #                        velem = ((poparray[vstates[i]]*poparray[vstates[j]])**(0.5))*(1.0+nsum/dsum)
-#				else:
-#                                        k = 0
- #                                       nsum = 0.0
-  #                                      dsum = 0.0
-   #                                     while k <= nta:
-#	                                        nsum = nsum + w[vstates[i]][k]*(math.exp(-1.0*((deltatn+dtw*k)**(2.0))*invtau[vstates[i]][vstates[j]]*invtau[vstates[i]][vstates[j]])-math.exp(-1.0*((dtw*k)**(2.0))*invtau[vstates[i]][vstates[j]]*invtau[vstates[i]][vstates[j]]))
-#	                                        dsum = dsum + w[vstates[i]][k]*math.exp(-1.0*((dtw*k)**(2.0))*invtau[vstates[i]][vstates[j]]*invtau[vstates[i]][vstates[j]])
-#	                                        k = k + 1
-#	                                velem = ((poparray[vstates[i]]*poparray[vstates[j]])**(0.5))*(1.0+nsum/dsum)
+				vtarget_matrix[i][i] = poparray[vstates[i]]
 			else:
 				velem = ((poparray[vstates[i]]*poparray[vstates[j]])**(0.5))*math.exp(-1.0*deltatn*invtau[vstates[i]][vstates[j]])
 				eseg[i][j] = math.exp(-1.0*deltatn*invtau[i][j])
 				eseg[j][i] = eseg[i][j]
+				vtarget_matrix[i][j] = velem
+				vtarget_matrix[j][i] = velem
 			pass
 			vtarget.append(velem)
 			j = j + 1
 		pass
 		i = i + 1
 	pass
+	# Convert vtarget list to matrix
 
-
+	# Calculate the trace
+	if rank == 1:
+		precollapseentropy = 0
+	else:
+		precollapseentropy = np.trace(vtarget_matrix - np.matmul(vtarget_matrix, vtarget_matrix))
+	print('vtarget_matrix:',vtarget_matrix)
+	print('precollapseentropy:',precollapseentropy)
 	iter = 0        # Used to track what column is sent to minelem
 	bcore = []      # block coordinates for fastest decaying element
 	listbank = []
@@ -368,27 +311,24 @@ def gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehr
 
 	# track is the collapsed into density matrix according to A
 	# constructing npop from the density matrix
-
+	print('poparray:',poparray)
 	if (track == 0):
-		return poparray
+		print('track == 0')
+		return poparray, precollapseentropy.real
 	pass
-
+	print(npop)
 	k = 0
-	index = 0
+	index2 = 0
 	while k < rank:
 		l = k
 		while l < rank:
 			if (k == l):
-				npop[vstates[k]] = A[track][index]/dgscale
-			index = index + 1
+				npop[vstates[k]] = A[track][index2]/dgscale
+			index2 = index2 + 1
 			l = l + 1
 		k = k + 1
 	pass
 
-#	print 'npop', npop
 #	print 'vectorized target'
 #	print A[track]
-
-
-	return npop
-
+	return npop, precollapseentropy.real

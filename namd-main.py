@@ -55,7 +55,7 @@ dtw = 0.010
 nta = 600
 
 #
-zpop = 1.0e-6
+zpop = 1.0e-4
 
 # number of total states in a single trajectory
 dimH = 2
@@ -63,13 +63,13 @@ dimH = 2
 #basis to run TAB in (collapse will be in this basis). 
 #To run TAB in the regular adiabatic basis leave this field blank. For the diabatic basis, set to 'diabatic'.
 
-basis='diabatic'
+basis='adiabatic'
 
 # (absolute) slope of diabatic1 potential along x1 direction
 w1 = 0.25
 A = 0.0006
 # slope of diabatic2-dimH potential along x1 direction
-w2 = 0.025
+w2 = 0.25
 B = 0.10
 
 C = 0.90
@@ -89,7 +89,7 @@ hnstepe = 50
 deltate = deltatn/(2.0*hnstepe)
 
 #Number of trajectories to be run in a calculation
-trajnum = 550
+trajnum = 10
 
 #Maximum number of nuclear time steps within a simulation
 tstepmax = 6000
@@ -127,7 +127,7 @@ intpop[0] = 1.000
 k = 1
 while k <= trajnum:	
 	#-----------Initial Conditions for trajectory-k -----------------
-	np.random.seed(k)
+	np.random.seed(k+3)
 	x1 = np.random.normal(0.0,0.204)-1.0	#Initial paritcle position on x1-direction
 	#x2 = np.random.normal(0.0,0.204)	#Initial particle position on x2-direction
 	odotx1 = np.random.normal(10.0,2.451)/pmass	#Initial particle velocity on x1-direction
@@ -172,7 +172,8 @@ while k <= trajnum:
 	line2p = str('PE Difference').rjust(20)
 	line3 = str('Total Energy').rjust(20)
 	line4 = str('norm').rjust(20)
-	heading = line1 + line2 + line2p + line3 + line4 + '\n'
+	line5 = str('Entropy').rjust(20)
+	heading = line1 + line2 + line2p + line3 + line4 + line5 + '\n'
 	eneout.write(heading)
 
 	#Opening trajectory specific state population output file
@@ -218,7 +219,7 @@ while k <= trajnum:
 	dpopout.write(heading)
 
 	#Writing out t = 0 outputs
-	null = writemain(t,dimH,x1,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass)
+	null = writemain(t,dimH,x1,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass,precollapseentropy=0.0)
 
 	#----------Begin the simulation---------------------------------
 	#Compute the Ehrenfest forces
@@ -234,10 +235,15 @@ while k <= trajnum:
 	cnorm = np.dot(ccont,ct)
 	norm2ct = (cnorm.real)**(0.50)
 
-	w, VR = np.linalg.eigh(H)
-	sw, sVR = eigsort(dimH,w,VR)
-	tsVR = np.transpose(sVR)
-	
+	if basis=='diabatic':
+		sVR = np.identity(dimH)
+		tsVR = np.transpose(sVR)
+
+	else:
+		w, VR = np.linalg.eigh(H)
+		sw, sVR = eigsort(dimH,w,VR)
+		tsVR = np.transpose(sVR)
+		
 	temp1 = np.zeros((1),dtype=complex)
 	
 	i = 0
@@ -261,22 +267,14 @@ while k <= trajnum:
 	#dH1,dH2 = dHcalc(dimH,x1,x2,w1,w2,c,delta)   #diratives of diabatic Hamiltonian
 	dH1 = dHcalc(dimH, x1, w1, w2, c)
 
-	if basis=='diabatic':
-		i = 0
-		while i < dimH:
-			force1 = -1.0*dH1[i][i]
-			oldforce1[i] = force1
-			i = i + 1
-		pass
-	else:
-		i = 0
-		while i < dimH:
-			force1 = -np.dot(tsVR[i,:],np.dot(dH1,sVR[:,i]))
-			#force2 = -np.dot(tsVR[i,:],np.dot(dH2,sVR[:,i]))
-			oldforce1[i] = force1
-			#oldforce2[i] = force2
-			i = i + 1
-		pass
+	i = 0
+	while i < dimH:
+		force1 = -np.dot(tsVR[i,:],np.dot(dH1,sVR[:,i]))
+		#force2 = -np.dot(tsVR[i,:],np.dot(dH2,sVR[:,i]))
+		oldforce1[i] = force1
+		#oldforce2[i] = force2
+		i = i + 1
+	pass
 
 	#Time steps count
 	n = 1
@@ -337,44 +335,29 @@ while k <= trajnum:
 		KE = 0.5*pmass*(odotx1**2.0)
 
 
-		Estates = np.zeros((dimH))
-		Estates = sw
+		#Estates = np.zeros((dimH))
+		#Estates = sw
 
 		temp1 = np.zeros((1),dtype=complex)
-		if basis=='diabatic':
-			i = 0
-			while i < dimH:
-				amp[i] = ct[i]/norm2ct
-				temp1[0] = amp[i]
-				temp2 = np.conjugate(temp1)
-				temp3 = np.transpose(temp2)
-				temp4 = np.dot(temp3,temp1)
-				poparray[i] = temp4.real
-				if (poparray[i] == 0):
-					ampdir[i] = 1.0
-				else:
-					ampdir[i] = amp[i]/(poparray[i]**(0.5))
-				pass
-				i = i + 1
+
+
+		i = 0
+		while i < dimH:
+			amp[i] = np.dot(tsVR[i,:],ct)/norm2ct
+			temp1[0] = amp[i]
+			temp2 = np.conjugate(temp1)
+			temp3 = np.transpose(temp2)
+			temp4 = np.dot(temp3,temp1)
+			poparray[i] = temp4.real
+			
+			if (poparray[i] == 0):
+				ampdir[i] = 1.0
+			else:
+				ampdir[i] = amp[i]/(poparray[i]**(0.5))
 			pass
-		else:
-			i = 0
-			while i < dimH:
-				amp[i] = np.dot(tsVR[i,:],ct)/norm2ct
-				temp1[0] = amp[i]
-				temp2 = np.conjugate(temp1)
-				temp3 = np.transpose(temp2)
-				temp4 = np.dot(temp3,temp1)
-				poparray[i] = temp4.real
-				
-				if (poparray[i] == 0):
-					ampdir[i] = 1.0
-				else:
-					ampdir[i] = amp[i]/(poparray[i]**(0.5))
-				pass
-				i = i + 1
-			pass
-		
+			i = i + 1
+		pass
+	
 		EMF = np.dot(ccont,np.dot(H,ct))/cnorm
 		rEMF = EMF.real
 		roldEMF = rEMF
@@ -407,8 +390,7 @@ while k <= trajnum:
 		
 		#----------- New Collapse Routine Goes Here ---------------------
 		npop = np.zeros((dimH))
-		npop = gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehrptol,odotrho,tolodotrho,nta,dtw,zpop,dgscale)
-		
+		npop, precollapseentropy = gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehrptol,odotrho,tolodotrho,nta,dtw,zpop,dgscale,amp)
 		oldforce1 = np.zeros((dimH))
 		#oldforce2 = np.zeros((dimH))
 		i = 0 
@@ -480,7 +462,7 @@ while k <= trajnum:
 		pass
 
 		if (n%twrite == 0):
-			null = writemain(t,dimH,x1,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass)
+			null = writemain(t,dimH,x1,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass,precollapseentropy)
 		pass
 		
 		n = n+1 #forward one time step

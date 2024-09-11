@@ -37,7 +37,7 @@ average_df.to_csv('avg_apop.dat', sep='\t', index=False, header=['t', 'state_0_p
 
 # Plot state 1 pop with t
 plt.figure(figsize=(10, 6))
-plt.plot(average_df['t'], average_df['state_1_pop'], label='dState 1 Pop')
+plt.plot(average_df['t'], average_df['state_1_pop'], label='aState 1 Pop')
 plt.xlabel('Time (t)')
 plt.ylabel('aState 1 Population')
 plt.title('aState 1 Population vs Time')

@@ -1,4 +1,4 @@
-def writemain (t,dimH,x1,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass): #writing to output files
+def writemain (t,dimH,x1,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass,precollapseentropy): #writing to output files
 	import numpy as np
 	import sys	
 	from hwrsort import eigsort
@@ -90,7 +90,8 @@ def writemain (t,dimH,x1,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass): #
 	line2p = format(dPE,'.10f').rjust(20)
 	line3 = format(Etot,'.10f').rjust(20)
 	line4 = format(sqrnorm,'.10f').rjust(20)
-	lineout = line1 + line2 + line2p + line3 + line4 + '\n'
+	line5 = format(precollapseentropy,'.10f').rjust(20)
+	lineout = line1 + line2 + line2p + line3 + line4 + line5 + '\n'
 	eneout.write(lineout)
 	
 	i = 0

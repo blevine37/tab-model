@@ -15,31 +15,31 @@ count_df = None
 # Loop over the list of files and read/process each one
 for file in file_list:
     df = pd.read_csv(file, delim_whitespace=True, header=None, skiprows=1,
-                     names=['t', 'Mean-Field Energy', 'PE Difference', 'Total Energy', 'norm'])
+                     names=['t', 'Mean-Field Energy', 'PE Difference', 'Total Energy', 'norm','Entropy'])
     
     if sum_df is None:
         sum_df = df.copy()
         count_df = pd.DataFrame({'t': df['t'], 'count': 1})
     else:
-        sum_df['Total Energy'] += df['Total Energy']
+        sum_df['Entropy'] += df['Entropy']
         count_df['count'] += 1
 
 # Compute the averages
 average_df = sum_df.copy()
-average_df['Total Energy'] /= count_df['count']
+average_df['Entropy'] /= count_df['count']
 
 # Select the required columns
-average_df_selected = average_df[['t', 'Total Energy']]
+average_df_selected = average_df[['t', 'Entropy']]
 
 # Write the average data to tot_energy.dat
-average_df_selected.to_csv('tot_energy.dat', sep='\t', index=False, header=['t', 'Total Energy'])
+average_df_selected.to_csv('avg_entropy.dat', sep='\t', index=False, header=['t', 'Entropy'])
 
 # Plot state 1 pop with t
 plt.figure(figsize=(10, 6))
-plt.plot(average_df_selected['t'], average_df_selected['Total Energy'], label='Total Energy')
+plt.plot(average_df_selected['t'], average_df_selected['Entropy'], label='Average Entropy')
 plt.xlabel('Time (t)')
-plt.ylabel('Total Energy')
-plt.title('Total Energy vs Time')
+plt.ylabel('Average Energy')
+plt.title('Average Entropy vs Time (Adiabatic)')
 plt.legend()
 plt.grid(True)
 plt.show()
