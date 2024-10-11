@@ -6,7 +6,7 @@ c=============== grid size and domain=================================
       integer ngrid1,ngrid2
       real*8 x1min, x2min, x1max, x2max
       parameter (ngrid1=1000,ngrid2=1000)
-      parameter (x1min=-4.0d0,x1max=8.0d0)
+      parameter (x1min=-4.0d0,x2min=-4.0d0,x1max=8.0d0,x2max=8.0d0)
 
 c=============== model parameters ====================================
       real*8 w1, w2, delta, c, pmass, epsil

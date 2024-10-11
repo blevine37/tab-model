@@ -1,4 +1,4 @@
-def writemain (t,dimH,x1,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass,precollapseentropy): #writing to output files
+def writemain (t,dimH,x1,x2,ct,odotx1,odotx2,H,posout,eneout,popout,dpopout,outp,pmass,precollapseentropy,term_count): #writing to output files
 	import numpy as np
 	import sys	
 	from hwrsort import eigsort
@@ -27,8 +27,8 @@ def writemain (t,dimH,x1,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass,pre
 	EMFr = EMF.real 	#Real part of the MF energy
 
 	#Kinetic energy
-	#KE = 0.5*pmass*(odotx1**2.0+odotx2**2.0)
-	KE = 0.5*pmass*(odotx1**2.0)
+	KE = 0.5*pmass*(odotx1**2.0+odotx2**2.0)
+	#KE = 0.5*pmass*(odotx1**2.0)
 	
 	Etot = EMFr + KE 		#Total Energy
 
@@ -56,7 +56,7 @@ def writemain (t,dimH,x1,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass,pre
 	#---------------adiabatic population--------------------
 	w,VR = np.linalg.eigh(H)
 	sw,sVR = eigsort(dimH,w,VR)
-	tsVR = np.transpose(sVR)
+	tsVR = np.transpose(np.conjugate(sVR))
 
 	dPE = np.amin(abs(EMFr-w))
 
@@ -82,7 +82,7 @@ def writemain (t,dimH,x1,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass,pre
 
 	line1 = format(t,'.4f').rjust(8)
 	line2 = format(x1,'.10f').rjust(20)
-	#line3 = format(x2,'.10f').rjust(20)
+	line3 = format(x2,'.10f').rjust(20)
 	lineout = line1 + line2 + '\n'
 	posout.write(lineout)
 
@@ -91,7 +91,8 @@ def writemain (t,dimH,x1,ct,odotx1,H,posout,eneout,popout,dpopout,outp,pmass,pre
 	line3 = format(Etot,'.10f').rjust(20)
 	line4 = format(sqrnorm,'.10f').rjust(20)
 	line5 = format(precollapseentropy,'.10f').rjust(20)
-	lineout = line1 + line2 + line2p + line3 + line4 + line5 + '\n'
+	line6 = format(term_count,'.10f').rjust(20)
+	lineout = line1 + line2 + line2p + line3 + line4 + line5 + line6 +'\n'
 	eneout.write(lineout)
 	
 	i = 0

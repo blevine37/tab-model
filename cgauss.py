@@ -1,4 +1,4 @@
-def gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehrptol,odotrho,tolodotrho,nta,dtw,zpop,dgscale,amp): # Determines which coherent sub-block 
+def gcollapse(dimH,deltatn,aforce1,aforce2,poparray,dcp1,dcp2,nzthresh,errortol,npthresh,pehrptol,odotrho,tolodotrho,nta,dtw,zpop,dgscale,amp): # Determines which coherent sub-block 
 	"""of the electronic density matrix the WF collapses into"""
 
 	# Standard library imports =====================================
@@ -26,7 +26,7 @@ def gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehr
 	while i < dimH:
 		j = i + 1
 		while j < dimH:
-			invtau[i][j] = ((aforce1[i]-aforce1[j])**(2.0)/(8.0*dcp1))**(0.50)
+			invtau[i][j] = ((aforce1[i]-aforce1[j])**(2.0)/(8.0*dcp1)+(aforce2[i]-aforce2[j])**(2.0)/(8.0*dcp2))**(0.50)
 			invtau[j][i] = invtau[i][j]
 			j = j + 1
 		i = i + 1
@@ -93,8 +93,8 @@ def gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehr
 		precollapseentropy = 0
 	else:
 		precollapseentropy = np.trace(vtarget_matrix - np.matmul(vtarget_matrix, vtarget_matrix))
-	print('vtarget_matrix:',vtarget_matrix)
-	print('precollapseentropy:',precollapseentropy)
+	#print('vtarget_matrix:',vtarget_matrix)
+	#print('precollapseentropy:',precollapseentropy)
 	iter = 0        # Used to track what column is sent to minelem
 	bcore = []      # block coordinates for fastest decaying element
 	listbank = []
@@ -278,6 +278,20 @@ def gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehr
 
 	# Error analysis of the linear least squares target wave function
 
+	#Convergence analysis
+	# Sort the weights in descending order
+	sorted_weights = np.sort(optw.x)[::-1]
+
+	# Initialize cumulative sum and term counter
+	cumulative_sum = 0.0
+	term_count = 0
+
+	# Calculate how many terms it takes to reach or exceed 0.90 cumulative weight
+	for weight in sorted_weights:
+		cumulative_sum += weight
+		term_count += 1
+		if cumulative_sum >= 0.90:
+			break
 
 
 	# Collapsing the wave function
@@ -314,7 +328,7 @@ def gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehr
 	print('poparray:',poparray)
 	if (track == 0):
 		print('track == 0')
-		return poparray, precollapseentropy.real
+		return poparray, precollapseentropy.real, term_count
 	pass
 	print(npop)
 	k = 0
@@ -331,4 +345,4 @@ def gcollapse(dimH,deltatn,aforce1,poparray,dcp1,nzthresh,errortol,npthresh,pehr
 
 #	print 'vectorized target'
 #	print A[track]
-	return npop, precollapseentropy.real
+	return npop, precollapseentropy.real, term_count
