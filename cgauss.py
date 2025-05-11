@@ -15,7 +15,7 @@ def gcollapse(dimH,deltatn,aforce1,aforce2,poparray,dcp1,dcp2,nzthresh,errortol,
 
 	# Rules ========================================================
 	# i, j, k, l, m, and n are all reserved for integer incrementing
-	print('poparray:',poparray)
+	#print('poparray:',poparray)
 
 	# General setup ================================================
 	npop = np.zeros((dimH)) 	# Stores output electronic populations
@@ -289,9 +289,7 @@ def gcollapse(dimH,deltatn,aforce1,aforce2,poparray,dcp1,dcp2,nzthresh,errortol,
 	# Calculate how many terms it takes to reach or exceed 0.90 cumulative weight
 	for weight in sorted_weights:
 		cumulative_sum += weight
-		term_count += 1
-		if cumulative_sum >= 0.90:
-			break
+
 
 
 	# Collapsing the wave function
@@ -328,9 +326,8 @@ def gcollapse(dimH,deltatn,aforce1,aforce2,poparray,dcp1,dcp2,nzthresh,errortol,
 	print('poparray:',poparray)
 	if (track == 0):
 		print('track == 0')
-		return poparray, precollapseentropy.real, term_count
+		return poparray, precollapseentropy.real, cumulative_sum
 	pass
-	print(npop)
 	k = 0
 	index2 = 0
 	while k < rank:
@@ -345,4 +342,4 @@ def gcollapse(dimH,deltatn,aforce1,aforce2,poparray,dcp1,dcp2,nzthresh,errortol,
 
 #	print 'vectorized target'
 #	print A[track]
-	return npop, precollapseentropy.real, term_count
+	return npop, precollapseentropy.real, cumulative_sum

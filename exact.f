@@ -15,13 +15,13 @@ c=============== model parameters ====================================
              !spacing between state2-9
              !linear coupling constant
              !nuclear mass
-      parameter (w1=0.25d0,w2=0.025d0,delta=0.0005d0,epsil=0.00)
+      parameter (w1=0.25d0,w2=0.025d0,delta=0.005d0,epsil=0.0d0)
       parameter (c=0.025d0,pmass=1.845d3)
 c=============== integration parameters ==============================
       real*8 deltat,tstepmax
              !nuclear simulation time step
              !maximum number of nuclear time steps within a simulation     
-      parameter (deltat=0.01d0,tstepmax=4.0d4)
+      parameter (deltat=0.01d0,tstepmax=3.0d4)
 c=============== initial conditions ==================================
       real*8 R1bar,R2bar,P1bar,P2bar
       parameter(R1bar=-1.0d0,R2bar=0.0d0,P1bar=10.0d0,P2bar=10.0d0)

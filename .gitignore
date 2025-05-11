@@ -10,4 +10,8 @@ __pycache__/rtelem.cpython-39.pyc
 __pycache__/sremove.cpython-39.pyc
 __pycache__/vstep.cpython-39.pyc
 __pycache__/WFprop.cpython-39.pyc
+jadoc/
 run.log
+__pycache__/jadoc.cpython-39.pyc
+phy568.txt
+collapseanalysis.ipynb

@@ -58,8 +58,8 @@ dtw = 0.010
 nta = 600
 
 #
-zpop = 1.0e-4
-tseed = 1
+zpop = 1.0e-6
+
 # number of total states in a single trajectory
 dimH = 9
 
@@ -79,7 +79,7 @@ w2 = 0.025
 c = 0.025
 
 # spacing distance
-delta = 0.01
+delta = 0.005
 
 #nuclear simulation time step
 deltatn = 0.05
@@ -91,10 +91,10 @@ hnstepe = 50
 deltate = deltatn/(2.0*hnstepe)
 
 #Number of trajectories to be run in a calculation
-trajnum = 1000
+trajnum = 500
 
 #Maximum number of nuclear time steps within a simulation
-tstepmax = 8000
+tstepmax = 6000
 
 #Decoherence correction parameter on x direction
 dcp1 = 6.0
@@ -129,7 +129,7 @@ intpop[0] = 1.000
 k = 1
 while k <= trajnum:	
 	#-----------Initial Conditions for trajectory-k -----------------
-	np.random.seed(tseed*k+3)
+	np.random.seed(k)
 	x1 = np.random.normal(0.0,0.204)-1.0	#Initial paritcle position on x1-direction
 	x2 = np.random.normal(0.0,0.204)	#Initial particle position on x2-direction
 	odotx1 = np.random.normal(10.0,2.451)/pmass	#Initial particle velocity on x1-direction
@@ -339,14 +339,23 @@ while k <= trajnum:
 		ampdir = np.zeros((dimH),dtype=complex)	#Stores amplitude directions for each state
 		amp = np.zeros((dimH),dtype=complex)		#Stores amplitudes for each state
 		KE = 0.5*pmass*(odotx1**2.0+odotx2**2.0)
-		#KE = 0.5*pmass*(odotx1**2.0)
-
+		#KE = 0.5*pmass*(odotx1**2.0)	
+		if basis=='diabatic':
+			sVR = np.identity(dimH)
+			tsVR = np.transpose(sVR)
+	
+		elif basis=='pointer':
+			tsVR = Force_diag(dH1, dH2, dimH)
+			sVR = np.transpose(np.conjugate(tsVR))
+		else:
+			w, VR = np.linalg.eigh(H)
+			sw, sVR = eigsort(dimH,w,VR)
+			tsVR = np.transpose(np.conjugate(sVR))
 
 		#Estates = np.zeros((dimH))
 		#Estates = sw
 
 		temp1 = np.zeros((1),dtype=complex)
-
 
 		i = 0
 		while i < dimH:
@@ -372,8 +381,8 @@ while k <= trajnum:
 		dH1,dH2 = dHcalc(dimH,x1,x2,w1,w2,c,delta)   #diratives of diabatic Hamiltonian
 		#dH1 = dHcalc(dimH, x1, w1, w2, c)
 
-		newforce1=np.zeros((dimH))        #Adiabatic State Force along x1 direction
-		newforce2=np.zeros((dimH))        #Adiabatic State Force along x2 direction
+		newforce1=np.zeros((dimH))        # State Force along x1 direction
+		newforce2=np.zeros((dimH))        # State Force along x2 direction
 		i = 0 
 		while i < dimH:
 			force1 = -np.dot(tsVR[i,:],np.dot(dH1,sVR[:,i]))
@@ -397,7 +406,7 @@ while k <= trajnum:
 		
 		#----------- New Collapse Routine Goes Here ---------------------
 		npop = np.zeros((dimH))
-		npop, precollapseentropy, term_count = gcollapse(dimH,deltatn,aforce1,aforce2,poparray,dcp1,dcp2,nzthresh,errortol,npthresh,pehrptol,odotrho,tolodotrho,nta,dtw,zpop,dgscale,amp)
+		npop, precollapseentropy, weight_sum = gcollapse(dimH,deltatn,aforce1,aforce2,poparray,dcp1,dcp2,nzthresh,errortol,npthresh,pehrptol,odotrho,tolodotrho,nta,dtw,zpop,dgscale,amp)
 		oldforce1 = np.zeros((dimH))
 		oldforce2 = np.zeros((dimH))
 		i = 0 
@@ -459,9 +468,9 @@ while k <= trajnum:
 			odotx1 = -1.0*odotx1 #reverses velocity in case of frustrated hops
 			odotx2 = -1.0*odotx2
 		else:		
-			odotx1 *=scale 
-			odotx2 *=scale 
-		
+			#odotx2 = math.copysign(abs((2.0*nKE/pmass)-odotx1**2.0)**0.50,odotx2)
+			odotx1 = scale*odotx1
+			odotx2 = scale*odotx2
 		i = 0
 		while i < dimH:
 			oldpop[i] = poparray[i]
@@ -469,7 +478,7 @@ while k <= trajnum:
 		pass
 
 		if (n%twrite == 0):
-			null = writemain(t,dimH,x1,x2,ct,odotx1,odotx2,H,posout,eneout,popout,dpopout,outp,pmass,precollapseentropy,term_count)
+			null = writemain(t,dimH,x1,x2,ct,odotx1,odotx2,H,posout,eneout,popout,dpopout,outp,pmass,precollapseentropy,weight_sum)
 		pass
 		
 		n = n+1 #forward one time step

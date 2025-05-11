@@ -5,6 +5,8 @@ def Force_diag(dH1, dH2, dimH):
     F_tensor[0] = dH1
     F_tensor[1] = dH2
 
-    FvR = jadoc.PerformJADOC(F_tensor)
-
+    FvR = jadoc.PerformJADOC(F_tensor, iS=dimH)
+    #make FvR real
+    FvR = np.real(FvR)
+    print (FvR)
     return FvR
