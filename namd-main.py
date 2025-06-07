@@ -420,7 +420,7 @@ while k <= trajnum:
 		
 		namp = np.zeros((dimH),dtype=complex)
 		nct = np.zeros((dimH,1),dtype=complex)
-		
+		c_residue = np.zeros((dimH,1),dtype=complex)
 		i = 0
 		while i < dimH:
 			namp[i] = ampdir[i]*(npop[i]**(0.5))*norm2ct
@@ -432,7 +432,12 @@ while k <= trajnum:
 			nct = nct + namp[i]*sVR[:, [i]]
 			i = i+1
 		pass
-	
+		# ---Momentum Rescaling-------------------
+		#ct= a_f*nct + b_r*cr  solve for a_f and b_r
+		a_f = np.dot(np.transpose(np.cojugate(nct)), ct)
+		b_r = np.sqrt(1-abs(a_f)**2.0)
+		if (abs(b_r) > nzthresh):
+			c_residue = (ct - a_f*nct) / b_r
 		i = 0
 		while i < dimH:	
 			cr[i] = nct[i][0].real
