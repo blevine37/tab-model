@@ -1,23 +1,24 @@
-# Calculate Ehrenfest force
-def calEff(dimH, ct, x1, x2, w1, w2, c, delta):
-	
-	import numpy as np
+#Calculate Ehrenfest force
+import numpy as np
+from diffH import dHcalc
 
-	from diffH import dHcalc
-	
-	ctbra = np.transpose(np.conjugate(ct))
-	
-	dH1, dH2 = dHcalc(dimH, x1, x2, w1, w2, c, delta)
+def calEff(dimH, ndof, ct, x, w1, w2, c, delta):
+    # build bra for later
+    ctbra = ct.conj().T                     # shape (dimH,)
 
-	cnorm = np.dot(ctbra, ct)
+    # dH has shape (ndof, dimH, dimH)
+    dH = dHcalc(dimH, ndof, x, w1, w2, c, delta)
 
-	Efft1 = -np.dot(ctbra, np.dot(dH1, ct))/cnorm
-	Eff1 = Efft1.real
+    # normalization scalar
+    cnorm = ctbra @ ct                      # same as np.dot(ctbra, ct)
 
-	Efft2 = -np.dot(ctbra, np.dot(dH2, ct))/cnorm
-	Eff2 = Efft2.real
+    # 1) first mat‐vec: each slice dH[k] dot ct → shape (ndof, dimH)
+    tmp = dH @ ct
 
-	return Eff1, Eff2
+    # 2) then dot each of those rows with ctbra → shape (ndof,)
+    #    and scale / take real part
+    Eff = - (tmp @ ctbra) / cnorm
+    return Eff.real
 
 
 	

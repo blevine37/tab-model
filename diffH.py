@@ -1,18 +1,16 @@
 # Calculate dH/dR
-def dHcalc(dimH,x1, x2, w1, w2, c, delta):
+def dHcalc(dimH,ndof,x, w1, w2, c, delta):
 	import numpy as np
-	
-	dH1 = np.zeros((dimH, dimH))
-	dH2 = np.zeros((dimH, dimH))
+	dH=np.zeros((ndof, dimH, dimH))
 
-	dH1[0][0] = -1.0*w1
+	dH[0, 0, 0] = -1.0*w1
 	
 	i = 1
 	while i < dimH:
-		dH1[i][i] = w2
-		dH2[i][0] = c
-		dH2[0][i] = c
+		dH[0, i, i] = w2
+		dH[1, i, 0] = c
+		dH[1, 0, i] = c
 		i = i + 1
 	pass
 
-	return dH1, dH2
+	return dH
