@@ -62,7 +62,7 @@ ndof = 2
 w1 = 0.25
 
 # slope of diabatic2-dimH potential along x1 direction
-w2 = 0.025
+w2 = 0.25
 
 # linear coupling constant
 c = 0.025
@@ -81,14 +81,14 @@ deltate = deltatn/(2.0*hnstepe)
 
 #Number of trajectories to be run in a calculation
 trajnum = 1000
-
 #Maximum number of nuclear time steps within a simulation
 tstepmax = 6000
 
 #Decoherence correction parameter in each direction
 dcp = [6.0, 6.0]
+rescale='old'
 
-
+reverse=int(0) #reverse the velocity for frustrated hops; 0 for no, 1 for yes
 #Particle mass (Nuclear mass)
 pmass = 1845
 
@@ -115,11 +115,12 @@ intpop[0] = 1.000
 x= np.zeros((ndof))	#Initial position vector
 odotx= np.zeros((ndof))	#Initial velocity vector
 #loops over trajectories-k
-k = 450
+k = 101
 while k <= trajnum:	
 	#-----------Initial Conditions for trajectory-k -----------------
 	#Initial conditions, buildH, and diffH are still defined manually along each dof
 	np.random.seed(k)
+	random.seed(k)	#Set the random seed for reproducibility
 	x[0] = np.random.normal(0.0,0.204)-1.0	#Initial paritcle position on x1-direction
 	x[1] = np.random.normal(0.0,0.204)	#Initial particle position on x2-direction
 	odotx[0] = np.random.normal(10.0,2.451)/pmass	#Initial particle velocity on x1-direction
@@ -327,7 +328,6 @@ while k <= trajnum:
 
 		#Calculate Ehrenfest forces
 		mfdF = calEff(dimH, ndof, ct, x, w1, w2, c, delta)
-
 		#Step velocities forward in time
 		odotx = vcalc(odotx, mfdF, mfdFprev, deltatn, pmass)
 		
@@ -357,7 +357,7 @@ while k <= trajnum:
 			temp4 = np.dot(temp3,temp1)
 			poparray[i] = temp4.real
 			
-			if (poparray[i] == 0):
+			if (poparray[i] < nzthresh):
 				ampdir[i] = 1.0
 			else:
 				ampdir[i] = amp[i]/(poparray[i]**(0.5))
@@ -388,14 +388,13 @@ while k <= trajnum:
 		
 		#----------- New Collapse Routine Goes Here ---------------------
 		npop = np.zeros((dimH))
-		npop = gcollapse(dimH,ndof,deltatn,aforce,poparray,dcp,nzthresh,errortol,npthresh,pehrptol,odotrho,tolodotrho,nta,dtw,zpop,dgscale)
+		npop, track = gcollapse(dimH,ndof,deltatn,aforce,poparray,dcp,nzthresh,errortol,npthresh,pehrptol,odotrho,tolodotrho,nta,dtw,zpop,dgscale)
 		
 		oldforce = np.zeros((ndof,dimH))
 		oldforce = newforce
-	
 
 		poparray = npop
-		
+
 		namp = np.zeros((dimH),dtype=complex)
 		nct = np.zeros((dimH,1),dtype=complex)
 		
@@ -404,25 +403,113 @@ while k <= trajnum:
 			namp[i] = ampdir[i]*(npop[i]**(0.5))*norm2ct
 			i = i+1
 		pass
-
+		#print ('namp',namp)
+		#print ('namp norm', np.dot(namp, np.transpose(np.conj(namp))))
+		#namp_residue= np.zeros((dimH,1),dtype=complex)
 		i = 0
 		while i < dimH:
 			nct = nct + namp[i]*np.transpose([tsVR[i]])
 			i = i+1
 		pass
-	
-		i = 0
-		while i < dimH:	
-			cr[i] = nct[i][0].real
-			ci[i] = nct[i][0].imag
-			i = i + 1
-		pass
-		
-		ct = cr+1j*ci
-		ccon = np.conjugate(ct)
-		ccont = np.transpose(ccon)
-		oldnorm = cnorm
-		cnorm = np.dot(ccont,ct)
+		EMF = (np.dot(np.conjugate(np.transpose(nct)),np.dot(H,nct))/np.dot(np.conjugate(np.transpose(nct)),nct)).item()
+		if (abs(EMF.imag) > nzthresh):
+			print('Warning: Mean-field energy has non-zero imaginary part, which is unexpected.')
+			print('EMF:', EMF)
+			sys.exit()
+		rEMF = EMF.real
+		a_f = np.dot((nct.flatten()),ct)
+		vrescale = np.ones(ndof)/np.sqrt(ndof)  # Effective "NAC" vector for rescaling velocities. We normalize it later.
+		deltav = 0.0
+		if(track==0):
+			vrescale = np.ones(ndof)
+		else:
+			print('old pop', oldpop)
+			print('npop', npop)
+			a_r = np.sqrt(np.maximum(0.0,1-abs(a_f)**2.0)) 
+			print('a_f', a_f)
+			print('a_r', a_r)
+			if (abs(a_r) > nzthresh):
+				print('nct', nct)
+				print('ct', ct)
+				ct_residue = (ct - a_f*nct.flatten()) / a_r
+				print('ct_residue', ct_residue)
+				#print('namp',namp)
+				#print('amp_residue',amp_residue)
+				F_i = calEff(dimH, ndof, ct, x, w1, w2, c, delta)
+				print('F_i', F_i)
+				F_f = calEff(dimH, ndof, nct.flatten(), x, w1, w2, c, delta)
+				print('F_f', F_f)
+				F_r = calEff(dimH, ndof, ct_residue, x, w1, w2, c, delta)
+				vrescale = F_i - (abs(a_f)**2)*F_f - (abs(a_r)**2)*F_r
+				vrescale = vrescale / np.linalg.norm(vrescale)
+				print('vrescale', vrescale)
+				
+
+
+		#--Rescaling Kinetic Energy-------
+		deltaEMF = rEMF - roldEMF
+		nKE = KE - deltaEMF
+		if not (track==0):
+			if (nKE < 0.0):
+				print ('frustrated hops are needed')
+				odotx = ((-1)**reverse)*odotx	#reverse the velocity or not
+				#restore the old wave function
+			elif(rescale=='old'):
+				scale = (nKE/KE)**0.50
+				odotx = odotx*scale
+				
+				i = 0
+				while i < dimH:	
+					cr[i] = nct[i][0].real
+					ci[i] = nct[i][0].imag
+					i = i + 1
+				pass
+				
+				ct = cr+1j*ci
+				ccon = np.conjugate(ct)
+				ccont = np.transpose(ccon)
+				oldnorm = cnorm
+				cnorm = np.dot(ccont,ct)
+				norm2ct = (cnorm.real)**(0.50)
+
+			else:
+				tempv=np.dot(odotx, np.transpose(vrescale))
+				print('tempv',tempv)
+				print('deltaKE',-1*deltaEMF)
+				discriminant = tempv**2 - (2*deltaEMF/pmass)
+				if discriminant >= 0: #we pick the root of smaller absolute value
+					if (tempv<0):
+						deltav = -1*tempv - np.sqrt(discriminant)
+					else:
+						deltav = -1*tempv + np.sqrt(discriminant)
+					
+					print('deltav',deltav)
+					print('odotx',odotx)
+					print('vrescale',vrescale)
+					oldKE=0.5*pmass*(np.inner(odotx, odotx))
+					odotx = odotx + deltav*vrescale		
+					print('odotx after rescale',odotx)
+					newKE = 0.5*pmass*(np.inner(odotx, odotx))
+					print('KE sanity check:', newKE-oldKE+ deltaEMF)
+					i = 0
+					while i < dimH:	
+						cr[i] = nct[i][0].real
+						ci[i] = nct[i][0].imag
+						i = i + 1
+					pass
+					
+					ct = cr+1j*ci
+					ccon = np.conjugate(ct)
+					ccont = np.transpose(ccon)
+					oldnorm = cnorm
+					cnorm = np.dot(ccont,ct)
+					norm2ct = (cnorm.real)**(0.50)
+				
+				else:
+					print("Warning: Negative discriminant encountered. Assuming frustrated hop..")
+					print("Discriminant:", discriminant)
+					odotx = ((-1)**reverse)*odotx	#reverse the velocity, or not
+
 		
 		#--Norm Conservation Check---------
 #		if (abs(cnorm-oldnorm).real >= 1e-12 or abs(cnorm-oldnorm).imag >= 1e-12 ):
@@ -433,22 +520,9 @@ while k <= trajnum:
 #		pass
 		
 		mfdF = calEff(dimH, ndof, ct, x, w1, w2, c, delta)
-		EMF = np.dot(ccont,np.dot(H,ct))/cnorm
-		rEMF = EMF.real
 		
-		#--Rescaling Kinetic Energy-------
-		deltaKE = rEMF - roldEMF
-		nKE = KE - deltaKE
-	
-		if (nKE < 0.0):
-			print ('frustrated hops are needed')
-			print ('aborting program')
-			sys.exit()
-		pass
 		
-		scale = (nKE/KE)**0.50
-		odotx = odotx*scale
-		
+
 		i = 0
 		while i < dimH:
 			oldpop[i] = poparray[i]

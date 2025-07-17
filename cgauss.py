@@ -373,7 +373,7 @@ def gcollapse(dimH,ndof,deltatn,aforce,poparray,dcp,nzthresh,errortol,npthresh,p
 	# constructing npop from the density matrix
 
 	if (track == 0):
-		return poparray
+		return poparray, track
 	pass
 
 	k = 0
@@ -393,5 +393,5 @@ def gcollapse(dimH,ndof,deltatn,aforce,poparray,dcp,nzthresh,errortol,npthresh,p
 #	print A[track]
 
 
-	return npop
+	return npop, track
 

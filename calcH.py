@@ -5,7 +5,6 @@ def buildH(dimH, x, w1, w2, c, delta):
 
 	#initialize Hamiltonian matrix
 	H = np.zeros((dimH,dimH))
-
 	H[0][0] = -1.0*w1*x[0]   #diabatic potential
 	
 	i = 1
