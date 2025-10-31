@@ -19,7 +19,7 @@ def buildH(dimH, x, w1, w2, c, delta):
 	i = 5
 
 	while i < dimH:
-		H[i][i] = H[i][i] - 0.08
+		H[i][i] = H[i][i]
 		i = i + 1
 	pass
 

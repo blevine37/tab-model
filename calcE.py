@@ -2,7 +2,7 @@
 def effE (dimH, ct, x1, x2, w1, w2, c, delta):
 	
 	import numpy as np 
-
+	from calcH import buildH
 	ctbra = np.transpose(np.conjugate(ct))
 
 	H = buildH(dimH, x1, x2, w1, w2, c, delta)

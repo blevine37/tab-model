@@ -17,6 +17,29 @@ from vstep import vcalc			#Step velocity forward
 from efF import calEff			#Calculate Ehrenfest forces
 from hwrsort import eigsort		#Sorts eigens of a matrix in ascending order
 from cgauss import gcollapse		#Collapses after coherence is lost into a pure state
+# -----------------Command-line arguments---------------------------------------
+import argparse
+
+parser = argparse.ArgumentParser(
+    description="Two-state CI simulation with optional velocity reversal and rescaling scheme."
+)
+parser.add_argument(
+    "--rescale",
+    choices=["new", "old"],
+    default="new",
+    help="Rescaling scheme to use after a collapse: 'new' (default) or 'old'."
+)
+parser.add_argument(
+    "--reverse",
+    type=int,
+    choices=[0, 1],
+    default=0,
+    help="Reverse velocity on frustrated hops? 1=yes , 0=no(default)."
+)
+
+args = parser.parse_args()
+rescale = args.rescale
+reverse = args.reverse  # keep as 0/1 to match the code path (-1)**reverse
 		
 #----------------Creating log file for output-----------------------------------
 outp = (open('run.log', 'w'))
@@ -62,13 +85,13 @@ ndof = 2
 w1 = 0.25
 
 # slope of diabatic2-dimH potential along x1 direction
-w2 = 0.25
+w2 = 0.025
 
 # linear coupling constant
 c = 0.025
 
 # spacing distance
-delta = 0.01
+delta = 0.005
 
 #nuclear simulation time step
 deltatn = 0.05
@@ -86,9 +109,7 @@ tstepmax = 6000
 
 #Decoherence correction parameter in each direction
 dcp = [6.0, 6.0]
-rescale='old'
 
-reverse=int(0) #reverse the velocity for frustrated hops; 0 for no, 1 for yes
 #Particle mass (Nuclear mass)
 pmass = 1845
 
@@ -115,12 +136,12 @@ intpop[0] = 1.000
 x= np.zeros((ndof))	#Initial position vector
 odotx= np.zeros((ndof))	#Initial velocity vector
 #loops over trajectories-k
-k = 101
+k = 1
 while k <= trajnum:	
 	#-----------Initial Conditions for trajectory-k -----------------
 	#Initial conditions, buildH, and diffH are still defined manually along each dof
-	np.random.seed(k)
-	random.seed(k)	#Set the random seed for reproducibility
+	np.random.seed(k+10)
+	random.seed(k+10)	#Set the random seed for reproducibility
 	x[0] = np.random.normal(0.0,0.204)-1.0	#Initial paritcle position on x1-direction
 	x[1] = np.random.normal(0.0,0.204)	#Initial particle position on x2-direction
 	odotx[0] = np.random.normal(10.0,2.451)/pmass	#Initial particle velocity on x1-direction
@@ -418,7 +439,7 @@ while k <= trajnum:
 			sys.exit()
 		rEMF = EMF.real
 		a_f = np.dot((nct.flatten()),ct)
-		vrescale = np.ones(ndof)/np.sqrt(ndof)  # Effective "NAC" vector for rescaling velocities. We normalize it later.
+		vrescale = np.zeros(ndof) # Effective "NAC" vector for rescaling velocities. We normalize it later.
 		deltav = 0.0
 		if(track==0):
 			vrescale = np.ones(ndof)

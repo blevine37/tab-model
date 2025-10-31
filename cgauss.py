@@ -145,7 +145,7 @@ def gcollapse(dimH,ndof,deltatn,aforce,poparray,dcp,nzthresh,errortol,npthresh,p
 #	                                velem = ((poparray[vstates[i]]*poparray[vstates[j]])**(0.5))*(1.0+nsum/dsum)
 			else:
 				velem = ((poparray[vstates[i]]*poparray[vstates[j]])**(0.5))*math.exp(-1.0*deltatn*invtau[vstates[i]][vstates[j]])
-				eseg[i][j] = math.exp(-1.0*deltatn*invtau[i][j])
+				eseg[i][j] = math.exp(-1.0*deltatn*invtau[vstates[i]][vstates[j]])
 				eseg[j][i] = eseg[i][j]
 			pass
 			vtarget.append(velem)

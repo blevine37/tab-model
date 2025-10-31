@@ -59,10 +59,10 @@ def writemain (t,dimH,ndof,x,ct,odotx,H,posout,velout,eneout,popout,dpopout,outp
 
 	dPE = np.amin(abs(EMFr-w))
 
-	amp = np.zeros((dimH),dtype=np.complex)
+	amp = np.zeros((dimH),dtype=complex)
 	poparray = np.zeros((dimH))
 
-	temp1 = np.zeros((1),dtype=np.complex)
+	temp1 = np.zeros((1),dtype=complex)
 	
 	i = 0
 	while i < dimH:
