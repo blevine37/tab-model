@@ -6,8 +6,8 @@ from matplotlib.animation import FuncAnimation
 
 # ——————————————————————
 # 1) Paths to your data directories
-new_dir = '/home/adurden/Ari/TAB/momentum/m9_10000_split/new'   # new files (Δt = 0.05)
-old_dir = '/home/adurden/Ari/TAB/momentum/m9_10000_split/old'  # old files (Δt = 0.5)
+new_dir = '/gpfs/scratch/arpereira/TABmomentum/model_2/new_no_reverse'   # new files (Δt = 0.05)
+old_dir = '/gpfs/scratch/arpereira/TABmomentum/model_2/old_no_reverse'  # old files (Δt = 0.5)
 
 # ——————————————————————
 # 2) Gather file lists
@@ -41,11 +41,11 @@ n_frames = len(times_old)
 fig, ax = plt.subplots(figsize=(6,6))
 ax.set_xlabel('x1')
 ax.set_ylabel('x2')
-ax.set_title('New (○) vs Old (×) Trajectories')
+ax.set_title('New (○) vs Old (×) Trajectories without Reversing')
 
 # Create two scatter artists, one for each data set
-scatter_new = ax.scatter([], [], marker='o', label='new')
-scatter_old = ax.scatter([], [], marker='x', label='old')
+scatter_new = ax.scatter([], [], marker='o', label='new with no reverse')
+scatter_old = ax.scatter([], [], marker='x', label='old with no reverse')
 
 # Text handle for displaying the current time
 time_text = ax.text(
@@ -100,4 +100,4 @@ ani = FuncAnimation(
 
 # Save as MP4 (requires ffmpeg installed)
 ani.save('trajectories_overlay_aligned.mp4', writer='ffmpeg', dpi=200)
-print("Saved aligned overlay as 'trajectories_overlay_aligned.mp4'")
+print("Saved aligned overlay as 'trajectories_model2_no_reverse.mp4'")

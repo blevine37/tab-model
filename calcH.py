@@ -1,4 +1,4 @@
-def buildH(dimH, x, w1, w2, c, delta):
+def buildH(dimH, x, w1, w2, c, delta, epsil):
 #Build the Hamiltonian for at position (x1,x2)
 	
 	import numpy as np
@@ -19,7 +19,7 @@ def buildH(dimH, x, w1, w2, c, delta):
 	i = 5
 
 	while i < dimH:
-		H[i][i] = H[i][i]
+		H[i][i] = H[i][i] - epsil
 		i = i + 1
 	pass
 
