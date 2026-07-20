@@ -1,4 +1,4 @@
-def writemain (t,dimH,x1,x2,ct,odotx1,odotx2,H,posout,eneout,popout,dpopout,outp,pmass): #writing to output files
+def writemain (t,dimH,ndof,x,ct,odotx,H,posout,velout,eneout,popout,dpopout,outp,pmass): #writing to output files
 	import numpy as np
 	import sys	
 	from hwrsort import eigsort
@@ -27,7 +27,7 @@ def writemain (t,dimH,x1,x2,ct,odotx1,odotx2,H,posout,eneout,popout,dpopout,outp
 	EMFr = EMF.real 	#Real part of the MF energy
 
 	#Kinetic energy
-	KE = 0.5*pmass*(odotx1**2.0+odotx2**2.0)
+	KE = 0.5*pmass*(np.inner(odotx,odotx)) 	#Kinetic energy of the wave function
 
 	Etot = EMFr + KE 		#Total Energy
 
@@ -59,10 +59,10 @@ def writemain (t,dimH,x1,x2,ct,odotx1,odotx2,H,posout,eneout,popout,dpopout,outp
 
 	dPE = np.amin(abs(EMFr-w))
 
-	amp = np.zeros((dimH),dtype=np.complex)
+	amp = np.zeros((dimH),dtype=complex)
 	poparray = np.zeros((dimH))
 
-	temp1 = np.zeros((1),dtype=np.complex)
+	temp1 = np.zeros((1),dtype=complex)
 	
 	i = 0
 	while i < dimH:
@@ -80,10 +80,15 @@ def writemain (t,dimH,x1,x2,ct,odotx1,odotx2,H,posout,eneout,popout,dpopout,outp
 	# Formatting and writing the outputs
 
 	line1 = format(t,'.4f').rjust(8)
-	line2 = format(x1,'.10f').rjust(20)
-	line3 = format(x2,'.10f').rjust(20)
-	lineout = line1 + line2 + line3 + '\n'
-	posout.write(lineout)
+	lineout = line1
+	for linei in range(ndof):
+		lineout+= format(x[linei],'.10f').rjust(20)
+	posout.write(lineout + '\n')
+
+	lineout = line1
+	for linei in range(ndof):
+		lineout+= format(odotx[linei],'.10f').rjust(20)
+	velout.write(lineout + '\n')
 
 	line2 = format(EMFr,'.10f').rjust(20)
 	line2p = format(dPE,'.10f').rjust(20)
